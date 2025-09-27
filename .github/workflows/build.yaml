@@ -1,0 +1,48 @@
+name: Build Native JNI EGL APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    env:
+      ANDROID_NDK_VERSION: 25.2.9519653
+      ANDROID_SDK_VERSION: 33
+      JAVA_HOME: /usr/lib/jvm/java-11-openjdk
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v2
+      with:
+        sdk-version: ${{ env.ANDROID_SDK_VERSION }}
+        ndk-version: ${{ env.ANDROID_NDK_VERSION }}
+
+    - name: Build native JNI EGL code
+      run: |
+        cd native
+        $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk NDK_APPLICATION_MK=Application.mk
+
+    - name: Build APK
+      run: |
+        ./gradlew assembleRelease
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: native-jni-egl-apk
+        path: reactapp/build/outputs/apk/release/app-release.apk
