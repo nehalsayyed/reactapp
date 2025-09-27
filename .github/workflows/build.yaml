@@ -29,11 +29,7 @@ jobs:
         sdkmanager --install "ndk;25.2.9519653"
         echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653" >> $GITHUB_ENV
 
-    - name: Build native JNI EGL code
-      run: |
-        cd native
-        $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk NDK_APPLICATION_MK=Application.mk
-
+    
     - name: Build APK
       run: |
         ./gradlew assembleRelease
