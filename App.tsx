@@ -4,92 +4,88 @@
  *
  * @format
  */
+
 // App.js
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import { Provider as PaperProvider, Avatar, Title, Caption, Drawer as PaperDrawer } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 
-const Drawer = createDrawerNavigator();
+export default function App() {
+  const [activeScreen, setActiveScreen] = useState('Home');
+  const [menuOpen, setMenuOpen] = useState(false);
 
-// Screens
-function HomeScreen() {
+  const renderScreen = () => {
+    switch (activeScreen) {
+      case 'Home':
+        return <Text style={styles.screenText}>🏠 Home Screen</Text>;
+      case 'Profile':
+        return <Text style={styles.screenText}>👤 Profile Screen</Text>;
+      case 'Settings':
+        return <Text style={styles.screenText}>⚙️ Settings Screen</Text>;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <View style={styles.screen}>
-      <Text style={styles.screenText}>🏠 Home Screen</Text>
-    </View>
-  );
-}
-
-function ProfileScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.screenText}>👤 Profile Screen</Text>
-    </View>
-  );
-}
-
-function SettingsScreen() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.screenText}>⚙️ Settings Screen</Text>
-    </View>
-  );
-}
-
-// Custom Drawer
-function CustomDrawerContent(props) {
-  return (
-    <DrawerContentScrollView {...props}>
-      <View style={styles.userInfoSection}>
-        <Avatar.Image source={{ uri: 'https://i.pravatar.cc/150?img=3' }} size={50} />
-        <Title style={styles.title}>John Doe</Title>
-        <Caption style={styles.caption}>@johndoe</Caption>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)}>
+          <Text style={styles.menuButton}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerText}>{activeScreen}</Text>
       </View>
 
-      <PaperDrawer.Section style={styles.drawerSection}>
-        <DrawerItem
-          icon={({ color, size }) => <Icon name="home-outline" color={color} size={size} />}
-          label="Home"
-          onPress={() => props.navigation.navigate('Home')}
-        />
-        <DrawerItem
-          icon={({ color, size }) => <Icon name="account-outline" color={color} size={size} />}
-          label="Profile"
-          onPress={() => props.navigation.navigate('Profile')}
-        />
-        <DrawerItem
-          icon={({ color, size }) => <Icon name="cog-outline" color={color} size={size} />}
-          label="Settings"
-          onPress={() => props.navigation.navigate('Settings')}
-        />
-      </PaperDrawer.Section>
-    </DrawerContentScrollView>
+      {menuOpen && (
+        <View style={styles.sideMenu}>
+          <TouchableOpacity onPress={() => { setActiveScreen('Home'); setMenuOpen(false); }}>
+            <Text style={styles.menuItem}>🏠 Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setActiveScreen('Profile'); setMenuOpen(false); }}>
+            <Text style={styles.menuItem}>👤 Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setActiveScreen('Settings'); setMenuOpen(false); }}>
+            <Text style={styles.menuItem}>⚙️ Settings</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <View style={styles.screen}>
+        {renderScreen()}
+      </View>
+    </SafeAreaView>
   );
 }
 
-// Main App
-export default function App() {
-  return (
-    <PaperProvider>
-      <NavigationContainer>
-        <Drawer.Navigator
-          drawerContent={(props) => <CustomDrawerContent {...props} />}
-          screenOptions={{ headerShown: true }}
-        >
-          <Drawer.Screen name="Home" component={HomeScreen} />
-          <Drawer.Screen name="Profile" component={ProfileScreen} />
-          <Drawer.Screen name="Settings" component={SettingsScreen} />
-        </Drawer.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
-  );
-}
-
-// Styles
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    padding: 15,
+    backgroundColor: '#6200ee',
+    alignItems: 'center',
+  },
+  menuButton: {
+    fontSize: 24,
+    color: '#fff',
+    marginRight: 20,
+  },
+  headerText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  sideMenu: {
+    backgroundColor: '#eee',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  menuItem: {
+    fontSize: 18,
+    paddingVertical: 10,
+  },
   screen: {
     flex: 1,
     justifyContent: 'center',
@@ -99,23 +95,4 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
   },
-  userInfoSection: {
-    paddingLeft: 20,
-    marginBottom: 20,
-  },
-  title: {
-    marginTop: 10,
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  caption: {
-    fontSize: 14,
-    lineHeight: 14,
-    color: '#777',
-  },
-  drawerSection: {
-    marginTop: 15,
-  },
 });
-
-          
