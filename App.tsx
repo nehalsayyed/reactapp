@@ -4,109 +4,118 @@
  *
  * @format
  */
+// App.js
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { Provider as PaperProvider, Avatar, Title, Caption, Drawer as PaperDrawer } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+const Drawer = createDrawerNavigator();
 
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Animated,
-  StyleSheet,
-} from 'react-native';
-
-const DATA = [
-  { id: '1', text: 'Buy groceries' },
-  { id: '2', text: 'Walk the dog' },
-  { id: '3', text: 'Read a book' },
-  { id: '4', text: 'Workout' },
-];
-
-const AnimatedCheckItem = ({ item, checked, onToggle }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePress = () => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: checked ? 1 : 1.1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: checked ? 1 : 0.5,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onToggle(item.id);
-    });
-  };
-
+// Screens
+function HomeScreen() {
   return (
-    <TouchableOpacity onPress={handlePress}>
-      <Animated.View
-        style={[
-          styles.item,
-          {
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim,
-            backgroundColor: checked ? '#d1e7dd' : '#fff',
-          },
-        ]}
-      >
-        <Text style={styles.text}>
-          {checked ? '✅ ' : '⬜️ '}
-          {item.text}
-        </Text>
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
-
-export default function App() {
-  const [checkedItems, setCheckedItems] = useState({});
-
-  const toggleItem = (id) => {
-    setCheckedItems((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={DATA}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <AnimatedCheckItem
-            item={item}
-            checked={!!checkedItems[item.id]}
-            onToggle={toggleItem}
-          />
-        )}
-      />
+    <View style={styles.screen}>
+      <Text style={styles.screenText}>🏠 Home Screen</Text>
     </View>
   );
 }
 
+function ProfileScreen() {
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.screenText}>👤 Profile Screen</Text>
+    </View>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.screenText}>⚙️ Settings Screen</Text>
+    </View>
+  );
+}
+
+// Custom Drawer
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <View style={styles.userInfoSection}>
+        <Avatar.Image source={{ uri: 'https://i.pravatar.cc/150?img=3' }} size={50} />
+        <Title style={styles.title}>John Doe</Title>
+        <Caption style={styles.caption}>@johndoe</Caption>
+      </View>
+
+      <PaperDrawer.Section style={styles.drawerSection}>
+        <DrawerItem
+          icon={({ color, size }) => <Icon name="home-outline" color={color} size={size} />}
+          label="Home"
+          onPress={() => props.navigation.navigate('Home')}
+        />
+        <DrawerItem
+          icon={({ color, size }) => <Icon name="account-outline" color={color} size={size} />}
+          label="Profile"
+          onPress={() => props.navigation.navigate('Profile')}
+        />
+        <DrawerItem
+          icon={({ color, size }) => <Icon name="cog-outline" color={color} size={size} />}
+          label="Settings"
+          onPress={() => props.navigation.navigate('Settings')}
+        />
+      </PaperDrawer.Section>
+    </DrawerContentScrollView>
+  );
+}
+
+// Main App
+export default function App() {
+  return (
+    <PaperProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{ headerShown: true }}
+        >
+          <Drawer.Screen name="Home" component={HomeScreen} />
+          <Drawer.Screen name="Profile" component={ProfileScreen} />
+          <Drawer.Screen name="Settings" component={SettingsScreen} />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
+  );
+}
+
+// Styles
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    paddingTop: 50,
-    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  item: {
-    padding: 15,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ced4da',
+  screenText: {
+    fontSize: 22,
+    fontWeight: '600',
   },
-  text: {
+  userInfoSection: {
+    paddingLeft: 20,
+    marginBottom: 20,
+  },
+  title: {
+    marginTop: 10,
+    fontWeight: 'bold',
     fontSize: 18,
   },
+  caption: {
+    fontSize: 14,
+    lineHeight: 14,
+    color: '#777',
+  },
+  drawerSection: {
+    marginTop: 15,
+  },
 });
+
+          
