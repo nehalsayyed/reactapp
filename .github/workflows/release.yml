@@ -1,10 +1,10 @@
-name: Build Production ARM64 Release APK
+name: Build Debug APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-arm64-release:
+  build-debug:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,41 +25,49 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Project Dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
-
-      - name: Create Minimal eas.json Config
+      - name: Ensure Android Package Name
         run: |
-          cat << 'EOF' > eas.json
-          {
-            "cli": {
-              "version": ">= 10.0.0"
-            },
-            "build": {
-              "preview": {
-                "android": {
-                  "buildType": "apk"
-                },
-                "env": {
-                  "NODE_ENV": "production"
-                }
-              }
+          node -e '
+            const fs = require("fs");
+            const app = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            app.expo = app.expo || {};
+            app.expo.android = app.expo.android || {};
+            if (!app.expo.android.package) {
+              app.expo.android.package = "com.anonymous.reactapp";
             }
-          }
-          EOF
+            fs.writeFileSync("app.json", JSON.stringify(app, null, 2));
+          '
 
-      - name: Build Standalone APK Locally on Runner
+      - name: Prebuild Native Android
+        run: npx expo prebuild --platform android --clean
+
+      - name: Restrict to ARM64 Only
         run: |
-          # EAS local build compiles the APK completely on GitHub runner (100% free)
-          eas build --local --platform android --profile preview --non-interactive --output=./app-release.apk
+          echo "reactNativeArchitectures=arm64-v8a" >> android/gradle.properties
 
-      - name: Upload Production APK Artifact
+      - name: Grant Gradle Permissions
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p build-output
+          APK_FILE=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          cp "$APK_FILE" build-output/app-debug-arm64.apk
+          echo "Debug APK created successfully:"
+          ls -lh build-output/app-debug-arm64.apk
+
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-production-arm64
-          path: ./app-release.apk
-          retention-days: 14
+          name: app-debug-arm64
+          path: build-output/app-debug-arm64.apk
+          retention-days: 7
           
