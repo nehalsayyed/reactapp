@@ -48,6 +48,9 @@ jobs:
           cp -r temp-expo-app/. .
           rm -rf temp-expo-app
 
+          # 4. Generate package-lock.json without downloading node_modules
+          npm install --package-lock-only
+
       - name: Commit and Push
         run: |
           git add -A
