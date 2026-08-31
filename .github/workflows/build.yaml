@@ -1,137 +1,61 @@
-name: Reset Repo & Init Clean Expo App
+name: Re-initialize Repo with Expo App
 
 on:
   workflow_dispatch:
+    inputs:
+      template:
+        description: 'Expo Template (e.g., blank, tabs, default, blank-typescript)'
+        required: false
+        default: 'blank-typescript'
+      branch:
+        description: 'Target Branch'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
 
 jobs:
-  reset-and-init:
+  scaffold-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Wipe Old Files & Generate Clean Stable Project
-        run: |
-          shopt -s dotglob
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' -exec rm -rf {} +
-
-          # 1. Create clean package.json
-          cat << 'EOF' > package.json
-          {
-            "name": "reactapp",
-            "version": "1.0.0",
-            "main": "index.js",
-            "scripts": {
-              "start": "expo start",
-              "android": "expo start --android",
-              "ios": "expo start --ios",
-              "web": "expo start --web"
-            },
-            "dependencies": {
-              "expo": "~52.0.0",
-              "expo-status-bar": "~2.0.0",
-              "react": "18.3.1",
-              "react-native": "0.76.6"
-            },
-            "devDependencies": {
-              "@babel/core": "^7.20.0"
-            },
-            "private": true
-          }
-          EOF
-
-          # 2. Create standard app.json
-          cat << 'EOF' > app.json
-          {
-            "expo": {
-              "name": "ReactApp",
-              "slug": "reactapp",
-              "version": "1.0.0",
-              "orientation": "portrait",
-              "icon": "./assets/icon.png",
-              "userInterfaceStyle": "light",
-              "android": {
-                "package": "com.anonymous.reactapp",
-                "adaptiveIcon": {
-                  "foregroundImage": "./assets/adaptive-icon.png",
-                  "backgroundColor": "#ffffff"
-                }
-              }
-            }
-          }
-          EOF
-
-          # 3. Create babel.config.js
-          cat << 'EOF' > babel.config.js
-          module.exports = function(api) {
-            api.cache(true);
-            return {
-              presets: ['babel-preset-expo'],
-            };
-          };
-          EOF
-
-          # 4. Create index.js entry point
-          cat << 'EOF' > index.js
-          import { registerRootComponent } from 'expo';
-          import App from './App';
-
-          registerRootComponent(App);
-          EOF
-
-          # 5. Create basic App.js
-          cat << 'EOF' > App.js
-          import { StatusBar } from 'expo-status-bar';
-          import { StyleSheet, Text, View } from 'react-native';
-
-          export default function App() {
-            return (
-              <View style={styles.container}>
-                <Text style={styles.title}>Welcome to Your App!</Text>
-                <Text style={styles.subtitle}>Ready for development</Text>
-                <StatusBar style="auto" />
-              </View>
-            );
-          }
-
-          const styles = StyleSheet.create({
-            container: {
-              flex: 1,
-              backgroundColor: '#fff',
-              alignItems: 'center',
-              justifyContent: 'center',
-            },
-            title: {
-              fontSize: 22,
-              fontWeight: 'bold',
-              marginBottom: 8,
-            },
-            subtitle: {
-              fontSize: 14,
-              color: '#666',
-            },
-          });
-          EOF
-
-          # 6. Create dummy assets folder
-          mkdir -p assets
-          touch assets/icon.png assets/adaptive-icon.png
-
-      - name: Commit and Push Clean Project
+      - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Scaffold Expo Project
+        run: |
+          # 1. Create a fresh Expo app in a temporary folder
+          npx create-expo-app@latest temp-expo-app --template ${{ github.event.inputs.template }} --no-install
+
+          # 2. Delete all existing repo files except .git and .github (preserving this workflow)
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' ! -name 'temp-expo-app' -exec rm -rf {} +
+
+          # 3. Move the scaffolded project files to the repository root
+          cp -r temp-expo-app/. .
+          rm -rf temp-expo-app
+
+      - name: Commit and Push
+        run: |
           git add -A
-          git commit -m "chore: scaffold clean stable Expo project structure" || echo "No changes"
-          git push origin main
+          # Check if there are changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes detected."
+          else
+            git commit -m "chore: re-initialize repository with fresh Expo app (${{ github.event.inputs.template }})"
+            git push origin ${{ github.event.inputs.branch }}
+          fi
           
