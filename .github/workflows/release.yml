@@ -1,7 +1,7 @@
 name: Build Production ARM64 Release APK
 
 on:
-  workflow_dispatch: # Trigger manually from GitHub web UI only
+  workflow_dispatch:
 
 jobs:
   build-arm64-release:
@@ -24,18 +24,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci || npm install
+        run: npm install
 
       - name: Prebuild Native Android Project
         run: npx expo prebuild --platform android --clean
 
-      - name: Generate Temporary Release Keystore & Configure Signing
+      - name: Generate Keystore & Configure Signing
         run: |
           cd android/app
-          # Generate a valid 2048-bit RSA release signing key
           keytool -genkeypair -v \
             -keystore release.keystore \
             -alias release-key \
@@ -46,15 +44,13 @@ jobs:
             -keypass android123 \
             -dname "CN=ExpoApp, OU=Dev, O=Solo, L=City, S=State, C=US"
 
-          # Inject the keystore parameters into gradle.properties
           echo "MYAPP_UPLOAD_STORE_FILE=release.keystore" >> ../gradle.properties
           echo "MYAPP_UPLOAD_KEY_ALIAS=release-key" >> ../gradle.properties
           echo "MYAPP_UPLOAD_STORE_PASSWORD=android123" >> ../gradle.properties
           echo "MYAPP_UPLOAD_KEY_PASSWORD=android123" >> ../gradle.properties
 
-      - name: Enable Release Minification & Single Architecture
+      - name: Enable Release Minification & ARM64 Architecture
         run: |
-          # Restrict native compilation strictly to ARM64-v8a
           echo "reactNativeArchitectures=arm64-v8a" >> android/gradle.properties
           echo "android.enableR8=true" >> android/gradle.properties
           echo "android.enableR8.fullMode=true" >> android/gradle.properties
@@ -65,7 +61,6 @@ jobs:
       - name: Build Optimized Release APK
         run: |
           cd android
-          # Run assembleRelease with ARM64 target and Hermes bytecode optimization
           ./gradlew assembleRelease \
             -PreactNativeArchitectures=arm64-v8a \
             --no-daemon \
