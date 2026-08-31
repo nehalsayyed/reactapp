@@ -1,7 +1,7 @@
-name: Reset Repo & Init Clean Expo Project
+name: Reset Repo & Init Modern Expo App
 
 on:
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   reset-and-init:
@@ -20,30 +20,25 @@ jobs:
         with:
           node-version: 20
 
-      - name: Wipe Old Files and Generate Fresh Expo Project
+      - name: Wipe Old Files & Generate Official Expo Template
         run: |
-          # Enable dotglob so hidden files (like .eslintrc, etc.) are included
           shopt -s dotglob
 
-          # Delete all existing files/folders EXCEPT .git and .github directory
+          # 1. Remove all old files except git configs
           find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' -exec rm -rf {} +
 
-          # Generate the fresh blank Expo project without running npm install
-          npx create-expo-app@latest temp-app --template blank --no-install
+          # 2. Create official Expo project using the default tabs + router template
+          npx create-expo-app@latest temp-app --template default --no-install --yes
 
-          # Move all newly generated files to root directory
+          # 3. Move everything to repo root
           mv temp-app/* .
           rm -rf temp-app
 
-      - name: Commit and Push Clean Project
+      - name: Commit and Push to Main
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Stage all deletions and new files
           git add -A
-
-          # Commit and push directly to main
-          git commit -m "chore: reset repo with clean Expo project template" || echo "No changes to commit"
+          git commit -m "chore: scaffold official Expo app with Expo Router" || echo "No changes"
           git push origin main
           
