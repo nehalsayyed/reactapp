@@ -1,10 +1,10 @@
-name: Build Debug APK
+name: Build Standalone APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-debug:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,46 +28,38 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Ensure Android Package Name
-        run: |
-          node -e '
-            const fs = require("fs");
-            const app = JSON.parse(fs.readFileSync("app.json", "utf8"));
-            app.expo = app.expo || {};
-            app.expo.android = app.expo.android || {};
-            if (!app.expo.android.package) {
-              app.expo.android.package = "com.anonymous.reactapp";
-            }
-            fs.writeFileSync("app.json", JSON.stringify(app, null, 2));
-          '
-
       - name: Prebuild Native Android
         run: npx expo prebuild --platform android --clean
 
-      - name: Restrict to ARM64 Only
+      - name: Export React Native JS Bundle
         run: |
-          echo "reactNativeArchitectures=arm64-v8a" >> android/gradle.properties
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res/
 
       - name: Grant Gradle Permissions
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
+      - name: Build Standalone APK
         run: |
           cd android
           ./gradlew assembleDebug --no-daemon
 
-      - name: Prepare APK Output
+      - name: Prepare Output
         run: |
           mkdir -p build-output
-          APK_FILE=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
-          cp "$APK_FILE" build-output/app-debug-arm64.apk
-          echo "Debug APK created successfully:"
-          ls -lh build-output/app-debug-arm64.apk
+          APK_FILE=$(find android/app/build/outputs/apk -name "*.apk" | head -n 1)
+          cp "$APK_FILE" build-output/app-debug.apk
+          ls -lh build-output/app-debug.apk
 
-      - name: Upload Debug APK Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-arm64
-          path: build-output/app-debug-arm64.apk
+          name: app-debug-apk
+          path: build-output/app-debug.apk
           retention-days: 7
           
