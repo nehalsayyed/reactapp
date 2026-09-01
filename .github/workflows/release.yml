@@ -28,7 +28,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        run: npm ci && npx expo install react-native-safe-area-context expo-notifications @expo/vector-icons 
+        run: npm ci && npx expo install react-native-safe-area-context expo-notifications @expo/ui @expo/vector-icons 
         
 
       - name: Generate Android Native Project
